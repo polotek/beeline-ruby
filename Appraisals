@@ -24,6 +24,12 @@ appraise "rack" do
   gem "warden"
 end
 
+appraise "rails-4" do
+  gem "rack-test"
+  gem "rails", "~> 4.0.0"
+  gem "warden"
+end
+
 appraise "rails-41" do
   gem "rack-test"
   gem "rails", "~> 4.1.0"
