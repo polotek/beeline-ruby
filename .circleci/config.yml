@@ -43,6 +43,8 @@ commands:
             - ./vendor/bundle
           key: gems-v1-{{ checksum "Gemfile.lock" }}
       - run: BUNDLE_GEMFILE=<< parameters.gemfile >> << parameters.command >>
+      - store_test_results:
+          path: test-results
 
 gemfiles:
   faraday: &faraday
