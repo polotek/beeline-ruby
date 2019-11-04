@@ -2,21 +2,12 @@
 
 require "bundler/setup"
 require "simplecov"
-require "simplecov-console"
 require "webmock/rspec"
 require "pry"
 
 WebMock.disable_net_connect!
 
 Dir["./spec/support/**/*.rb"].sort.each { |f| require f }
-SimpleCov.formatter = SimpleCov::Formatter::Console
-
-# Make coverage work with Appraisals
-SimpleCov.command_name(ENV["BUNDLE_GEMFILE"].split.last || "")
-
-SimpleCov.start do
-  add_filter "/spec/"
-end
 
 require "honeycomb-beeline"
 

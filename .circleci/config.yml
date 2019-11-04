@@ -31,6 +31,10 @@ commands:
         default: bundle exec rake test
     steps:
       - checkout
+      - save_cache:
+          key: repo-v1-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/project
       - restore_cache:
           keys:
             - gems-v1-{{ checksum "Gemfile.lock" }}
@@ -42,7 +46,19 @@ commands:
           paths:
             - ./vendor/bundle
           key: gems-v1-{{ checksum "Gemfile.lock" }}
+      - run: mkdir -p rspec
       - run: BUNDLE_GEMFILE=<< parameters.gemfile >> << parameters.command >>
+      - store_test_results:
+          path: rspec
+      - run:
+          name: Stash coverage results
+          command: |
+            mkdir coverage_results
+            cp -R coverage/.resultset.json coverage_results/.resultset-${CIRCLE_JOB}.json
+      - persist_to_workspace:
+          root: .
+          paths:
+            - coverage_results
 
 gemfiles:
   aws-two: &aws-two
@@ -99,6 +115,21 @@ gemfiles:
           gemfile: gemfiles/rails_6.gemfile
 
 jobs:
+  coverage:
+    executor: ruby-two-six
+    steps:
+      - attach_workspace:
+          at: .
+      - restore_cache:
+          keys:
+            - repo-v1-{{ .Environment.CIRCLE_SHA1 }}
+      - run: gem update bundler
+      - run: bundle install --path vendor/bundle
+      - run: bundle exec rake simplecov:merge
+      - store_artifacts:
+          path: coverage
+          destination: coverage
+
   publish:
     executor: ruby-two-six
     steps:
@@ -463,14 +494,9 @@ workflows:
           <<: *tag_filters
           requires:
             - lint
-      - publish:
-          filters:
-            tags:
-              only: /^v.*/
-            branches:
-              ignore: /.*/
+      - coverage:
+          <<: *tag_filters
           requires:
-            - lint
             - aws-two-ruby-two-three
             - aws-two-ruby-two-four
             - aws-two-ruby-two-five
@@ -518,3 +544,11 @@ workflows:
             - rails-five-two-ruby-two-six
             - rails-six-ruby-two-five
             - rails-six-ruby-two-six
+      - publish:
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+          requires:
+            - coverage
